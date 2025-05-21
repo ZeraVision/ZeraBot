@@ -94,15 +94,23 @@ if ! docker-compose up -d; then
     exit 1
 fi
 
+# Ensure certificates directory has correct permissions
+echo -e "${YELLOW}🔐 Setting up SSL certificates...${NC}"
+sudo mkdir -p ./certs
+sudo chown -R 1000:1000 ./certs
+sudo chmod 700 ./certs
+
 # Show deployment summary
 echo -e "\n${GREEN}✅ Services restarted successfully!${NC}"
 echo -e "\n📋 Status Summary:"
 echo -e "  - Version: $(git rev-parse --short HEAD 2>/dev/null || echo "unknown")"
 echo -e "  - Services: $(docker-compose ps --services | wc -l) services running"
+echo -e "  - SSL Certs: ${GREEN}Configured in /app/certs${NC}"
 echo -e "\n🔍 Useful Commands:"
 echo -e "  - View logs: ${YELLOW}docker-compose logs -f${NC}"
 echo -e "  - Check status: ${YELLOW}docker-compose ps${NC}"
 echo -e "  - View bot info: ${YELLOW}curl -s http://localhost:8080/health | jq${NC} (requires jq)"
+echo -e "  - Check SSL certs: ${YELLOW}sudo ls -la ./certs${NC}"
 
 if [ "$IS_UPDATE" = false ]; then
     echo -e "\n🌐 Your bot should now be running! Try sending a message to it on Telegram."

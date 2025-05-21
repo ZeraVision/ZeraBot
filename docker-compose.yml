@@ -4,20 +4,28 @@ services:
   zerabot:
     build: .
     container_name: zerabot
-    restart: always
+    restart: unless-stopped
     env_file: .env
     environment:
       - ENVIRONMENT=production
       - TZ=UTC
+      - AUTOCERT_DIR=/app/certs  # Directory for Let's Encrypt certificates
     ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"
+      - "80:80"       # HTTP for Let's Encrypt challenge
+      - "443:443"     # HTTPS
+      - "8080:8080"   # Optional: HTTP API
     volumes:
       - certs:/app/certs
       - ./data:/app/data
     networks:
       - zerabot-network
+    # Ensure proper permissions for the certs directory
+    user: "1000:1000"  # Match the non-root user in the container
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Uncomment and configure if you need a local PostgreSQL instance
   # db:
