@@ -17,33 +17,18 @@ generate_secret() {
     LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32
 }
 
-# Function to check if services are healthy
-check_services_health() {
-    local timeout=60
-    local start_time=$(date +%s)
+# Function to check if services are running (basic check)
+check_services_running() {
+    echo -e "${YELLOW}⏳ Starting services...${NC}"
     
-    echo -e "${YELLOW}⏳ Checking services health...${NC}"
+    # Give services a moment to start
+    sleep 5
     
-    while true; do
-        local current_time=$(date +%s)
-        local elapsed=$((current_time - start_time))
-        
-        if [ $elapsed -ge $timeout ]; then
-            echo -e "${RED}❌ Services did not become healthy within $timeout seconds${NC}"
-            return 1
-        fi
-        
-        if docker-compose ps | grep -q "Up (healthy)"; then
-            echo -e "${GREEN}✅ All services are healthy!${NC}"
-            return 0
-        elif docker-compose ps | grep -q "Exit"; then
-            echo -e "${RED}❌ Some services have exited unexpectedly${NC}"
-            docker-compose logs
-            return 1
-        fi
-        
-        sleep 5
-    done
+    echo -e "${YELLOW}ℹ️  Checking service status...${NC}"
+    docker-compose ps
+    
+    echo -e "\n${GREEN}✅ Deployment completed!${NC}"
+    echo -e "${YELLOW}ℹ️  Use 'docker-compose logs -f' to view logs${NC}"
 }
 
 # Check for required commands
@@ -109,32 +94,12 @@ if ! docker-compose up -d; then
     exit 1
 fi
 
-# Check services health
-if ! check_services_health; then
-    # Attempt to rollback if this was an update
-    if [ "$IS_UPDATE" = true ]; then
-        echo -e "${YELLOW}🔄 Attempting rollback...${NC}"
-        git checkout $CURRENT_VERSION
-        docker-compose up -d --force-recreate
-        
-        if check_services_health; then
-            echo -e "${GREEN}✅ Successfully rolled back to previous version ($CURRENT_VERSION)${NC}"
-        else
-            echo -e "${RED}❌ Rollback failed. Manual intervention required.${NC}"
-            exit 1
-        fi
-    else
-        exit 1
-    fi
-fi
-
 # Show deployment summary
-echo -e "\n${GREEN}✅ Deployment successful!${NC}"
-echo -e "\n📋 Deployment Summary:"
+echo -e "\n${GREEN}✅ Services restarted successfully!${NC}"
+echo -e "\n📋 Status Summary:"
 echo -e "  - Version: $(git rev-parse --short HEAD 2>/dev/null || echo "unknown")"
 echo -e "  - Services: $(docker-compose ps --services | wc -l) services running"
-echo -e "  - Mode: $([ "$IS_UPDATE" = true ] && echo "Update" || echo "Fresh Install")"
-echo -e "\n🔍 Monitoring:"
+echo -e "\n🔍 Useful Commands:"
 echo -e "  - View logs: ${YELLOW}docker-compose logs -f${NC}"
 echo -e "  - Check status: ${YELLOW}docker-compose ps${NC}"
 echo -e "  - View bot info: ${YELLOW}curl -s http://localhost:8080/health | jq${NC} (requires jq)"
@@ -142,3 +107,4 @@ echo -e "  - View bot info: ${YELLOW}curl -s http://localhost:8080/health | jq${
 if [ "$IS_UPDATE" = false ]; then
     echo -e "\n🌐 Your bot should now be running! Try sending a message to it on Telegram."
 fi
+

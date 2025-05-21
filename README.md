@@ -114,10 +114,7 @@ sudo git pull
 The deployment script will automatically:
 - Pull the latest code changes
 - Rebuild containers if needed
-- Apply database migrations
 - Restart services with zero downtime
-- Verify the new version is healthy
-- Rollback if anything fails
 
 ## 🛠️ Maintenance
 
