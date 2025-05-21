@@ -75,7 +75,7 @@ func main() {
 		}
 	}()
 
-	// Send a startup notification to the admin
+	// Send a startup notification to the test channel
 	if bot != nil {
 		bot.SendMessage(-4897181115, "🤖 *Bot started successfully!*")
 	}

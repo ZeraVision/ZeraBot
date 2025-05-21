@@ -26,6 +26,8 @@ var limiter = rate.NewLimiter(rate.Every(3*time.Second), 1) // 1 request per 3 s
 
 func Broadcast(ctx context.Context, block *zera_protobuf.Block) (*emptypb.Empty, error) {
 
+	log.Printf("Broadcast received for block %d", block.BlockHeader.BlockHeight)
+
 	// Rate limit the broadcasts
 	if !limiter.Allow() {
 		log.Println("Broadcast rate limit exceeded (1 per 3 seconds), rejecting broadcast")
@@ -35,6 +37,8 @@ func Broadcast(ctx context.Context, block *zera_protobuf.Block) (*emptypb.Empty,
 	if !isSenderFromDomain(ctx) {
 		return &emptypb.Empty{}, nil
 	}
+
+	log.Printf("Broadcast passed checks for block %d", block.BlockHeader.BlockHeight)
 
 	go func(block *zera_protobuf.Block) {
 		proposal.ProcessProposals(block)
