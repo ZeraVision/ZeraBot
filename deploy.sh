@@ -1,15 +1,42 @@
 #!/bin/bash
-set -e
+
+# Check if running on Windows (Git Bash, WSL, etc.)
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
+    IS_WINDOWS=true
+    # Enable case-insensitive pathname expansion on Windows
+    shopt -s nocasematch
+else
+    IS_WINDOWS=false
+fi
 
 # Colors for output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+if [ -t 1 ]; then  # Check if stdout is a terminal
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    NC='\033[0m' # No Color
+else
+    RED=''
+    GREEN=''
+    YELLOW=''
+    NC=''
+fi
 
 # Function to check if a command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
+}
+
+# Function to run commands with appropriate sudo/doas
+run_as_root() {
+    if command_exists sudo; then
+        sudo "$@"
+    elif command_exists doas; then
+        doas "$@"
+    else
+        echo -e "${RED}❌ Neither sudo nor doas found. Please run this script as root.${NC}" >&2
+        exit 1
+    fi
 }
 
 # Function to generate a random string
@@ -83,36 +110,90 @@ if ! docker-compose build --no-cache; then
     exit 1
 fi
 
+# Function to run docker-compose with the correct command
+docker_compose() {
+    if command_exists docker-compose; then
+        docker-compose "$@"
+    else
+        docker compose "$@"
+    fi
+}
+
 # Stop and remove existing containers if they exist
 echo -e "${YELLOW}🛑 Stopping any running services...${NC}"
-docker-compose down --remove-orphans || true
+docker_compose down --remove-orphans || true
 
-# Start the services in detached mode
-echo -e "${YELLOW}🚀 Starting services...${NC}"
-if ! docker-compose up -d; then
+# Set up certs directory with proper permissions
+echo -e "${YELLOW}🔧 Configuring certificate directory...${NC}"
+CERT_DIR="./certs"
+
+if [ "$IS_WINDOWS" = true ]; then
+    # Windows specific commands
+    if [ -d "$CERT_DIR" ]; then
+        echo -e "${YELLOW}Removing existing certs directory...${NC}"
+        rm -rf "$CERT_DIR"
+    fi
+    mkdir -p "$CERT_DIR"
+    # On Windows, we can't easily set permissions like chmod/chown
+else
+    # Unix/Linux specific commands
+    if [ -d "$CERT_DIR" ]; then
+        echo -e "${YELLOW}Removing existing certs directory...${NC}"
+        run_as_root rm -rf "$CERT_DIR"
+    fi
+    mkdir -p "$CERT_DIR"
+    chmod 700 "$CERT_DIR"
+    run_as_root chown -R 1000:1000 "$CERT_DIR"
+fi
+
+# Rebuild and start services
+echo -e "${YELLOW}🚀 Building and starting services...${NC}"
+if ! docker_compose build --no-cache; then
+    echo -e "${RED}❌ Failed to build services${NC}"
+    exit 1
+fi
+
+if ! docker_compose up -d; then
     echo -e "${RED}❌ Failed to start services${NC}"
     exit 1
 fi
 
-# Ensure certificates directory has correct permissions
-echo -e "${YELLOW}🔐 Setting up SSL certificates...${NC}"
-sudo mkdir -p ./certs
-sudo chown -R 1000:1000 ./certs
-sudo chmod 700 ./certs
+# Wait a moment for services to start
+if [ "$IS_WINDOWS" = true ]; then
+    timeout /t 5 /nobreak >nul 2>&1  # Windows sleep
+else
+    sleep 5  # Unix sleep
+fi
+
+# Show container status
+echo -e "\n${YELLOW}📊 Container status:${NC}"
+docker_compose ps
+
+# Get the number of running services
+SERVICE_COUNT=$(docker_compose ps --services 2>/dev/null | wc -l | tr -d '[:space:]')
+# Ensure we have at least 1 service if the count is 0
+[ "$SERVICE_COUNT" -eq 0 ] && SERVICE_COUNT=1
 
 # Show deployment summary
 echo -e "\n${GREEN}✅ Services restarted successfully!${NC}"
 echo -e "\n📋 Status Summary:"
-echo -e "  - Version: $(git rev-parse --short HEAD 2>/dev/null || echo "unknown")"
-echo -e "  - Services: $(docker-compose ps --services | wc -l) services running"
+echo -e "  - Version: $(git rev-parse --short HEAD 2>/dev/null || echo \"unknown\")"
+echo -e "  - Services: $SERVICE_COUNT services running"
 echo -e "  - SSL Certs: ${GREEN}Configured in /app/certs${NC}"
 echo -e "\n🔍 Useful Commands:"
-echo -e "  - View logs: ${YELLOW}docker-compose logs -f${NC}"
-echo -e "  - Check status: ${YELLOW}docker-compose ps${NC}"
+echo -e "  - View logs: ${YELLOW}docker_compose logs -f${NC}"
+echo -e "  - Check status: ${YELLOW}docker_compose ps${NC}"
 echo -e "  - View bot info: ${YELLOW}curl -s http://localhost:8080/health | jq${NC} (requires jq)"
-echo -e "  - Check SSL certs: ${YELLOW}sudo ls -la ./certs${NC}"
+
+# Platform-specific instructions
+if [ "$IS_WINDOWS" = true ]; then
+    echo -e "  - Check SSL certs: ${YELLOW}dir certs${NC}"
+    echo -e "\n${YELLOW}ℹ️  Windows Note:${NC} If you encounter permission issues with certificates, run this script as Administrator."
+else
+    echo -e "  - Check SSL certs: ${YELLOW}ls -la ./certs${NC}"
+    echo -e "\n${YELLOW}ℹ️  Note:${NC} If you encounter permission issues, you may need to run: ${YELLOW}sudo chown -R 1000:1000 ./certs${NC}"
+fi
 
 if [ "$IS_UPDATE" = false ]; then
     echo -e "\n🌐 Your bot should now be running! Try sending a message to it on Telegram."
 fi
-

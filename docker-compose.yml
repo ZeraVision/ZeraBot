@@ -15,8 +15,9 @@ services:
       - "443:443"     # HTTPS
       - "8080:8080"   # Optional: HTTP API
     volumes:
-      - certs:/app/certs
+      - ./certs:/app/certs
       - ./data:/app/data
+      # Use a bind mount for certs to ensure proper permissions
     networks:
       - zerabot-network
     # Ensure proper permissions for the certs directory
@@ -51,6 +52,5 @@ networks:
     driver: bridge
 
 volumes:
-  certs:
   postgres_data:
   data:

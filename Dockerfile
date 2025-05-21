@@ -32,7 +32,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN groupadd -r zerabot && \
     useradd -r -g zerabot -d /app -s /sbin/nologin -c "ZeraBot user" zerabot && \
     mkdir -p /app/certs && \
-    chown -R zerabot:zerabot /app/certs && \
+    chown -R zerabot:zerabot /app && \
+    chmod -R 755 /app && \
     chmod 700 /app/certs
 
 WORKDIR /app
