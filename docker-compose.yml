@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  zerabot:
+    build: .
+    container_name: zerabot
+    restart: always
+    env_file: .env
+    environment:
+      - ENVIRONMENT=production
+      - TZ=UTC
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - certs:/app/certs
+      - ./data:/app/data
+    networks:
+      - zerabot-network
+
+  # Uncomment and configure if you need a local PostgreSQL instance
+  # db:
+  #   image: postgres:15-alpine
+  #   container_name: zerabot-db
+  #   restart: always
+  #   environment:
+  #     POSTGRES_USER: ${DB_USER}
+  #     POSTGRES_PASSWORD: ${DB_PASSWORD}
+  #     POSTGRES_DB: ${DB_NAME}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - zerabot-network
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+networks:
+  zerabot-network:
+    driver: bridge
+
+volumes:
+  certs:
+  postgres_data:
+  data:

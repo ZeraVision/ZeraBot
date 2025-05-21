@@ -1,97 +1,134 @@
 # ZeraBot 🤖
 
-A Telegram bot built with Go that handles basic commands and messages using webhooks.
+A Telegram bot built with Go that tracks Zera Network governance proposals and notifies subscribers about new proposals and updates. Built with scalability and security in mind.
 
-## Features
+## ✨ Features
 
-- `/start` - Welcome message
-- `/help` - Show available commands
-- `/hello` - Get a friendly greeting
-- Webhook support with automatic HTTPS via Let's Encrypt
+- **Real-time Notifications**: Get instant updates about new governance proposals
+- **Symbol-based Subscriptions**: Subscribe to specific proposal symbols (e.g., `$ZRA+0000`)
+- **Admin Controls**: Group admins can manage subscriptions for their groups
+- **Docker Support**: Easy deployment with Docker and Docker Compose
+- **Secure**: Built with security best practices in mind
 
-## Prerequisites
+## 🚀 Quick Start with Docker
 
-- Go 1.21 or higher
+The easiest way to run ZeraBot is using Docker Compose:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/yourusername/ZeraBot.git
+cd ZeraBot
+
+# 2. Configure environment variables
+cp .env.example .env
+nano .env  # Update with your configuration
+
+# 3. Start the services
+docker-compose up -d
+```
+
+## 📋 Prerequisites
+
+- Docker and Docker Compose
 - A Telegram bot token from [@BotFather](https://t.me/botfather)
-- A domain name (for webhook)
-- Ports 80 and 443 open on your server
+- A domain name pointing to your server (for webhooks)
+- Ports 80, 443, and 8080 open on your server
 
-## Setup
+## 🔧 Configuration
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/jfederk/ZeraBot.git
-   cd ZeraBot
-   ```
+Edit the `.env` file with your configuration:
 
-2. Install dependencies:
-   ```bash
-   go mod download
-   ```
+```env
+# Application
+ENVIRONMENT=production
+DOMAIN=yourdomain.com
 
-3. Copy the example environment file and fill in your details:
-   ```bash
-   cp .env.example .env
-   ```
-   Then edit the `.env` file with your:
-   - Telegram Bot Token
-   - Domain name
-   - Webhook secret (a long random string)
-   - (Optional) Email for Let's Encrypt
+# Telegram
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 
-4. Make sure your domain's DNS is pointing to your server's IP address.
+# Security
+WEBHOOK_SECRET=a_secure_random_string
 
-## Running the Bot
+# Database
+DATABASE_URL=postgresql://user:password@host:port/dbname?sslmode=require
 
-1. Run the bot (requires root/sudo for ports 80/443):
-   ```bash
-   sudo -E go run main.go
-   ```
-   The `-E` flag preserves the environment variables.
+# Let's Encrypt (optional)
+LETSENCRYPT_EMAIL=your_email@example.com
+```
 
-2. The bot will:
-   - Set up a webhook with Telegram
-   - Obtain an SSL certificate from Let's Encrypt
-   - Start listening for updates
+## 🤖 Bot Commands
 
-3. Start a chat with your bot on Telegram and send `/start` to begin.
+- `/start` - Welcome message and brief introduction
+- `/help` - Show available commands
+- `/proposalSubscribe $SYMBOL` - Subscribe to a specific proposal symbol
+- `/proposalUnsubscribe $SYMBOL` - Unsubscribe from a specific proposal
+- `/proposalSubscribe all` - Subscribe to all proposals (admin only in groups)
+- `/proposalUnsubscribe all` - Unsubscribe from all proposals (admin only in groups)
+- `/mysubscriptions` - List your current subscriptions
 
-## Building for Production
+## 🐳 Docker Deployment
 
-1. Build the binary:
-   ```bash
-   go build -o zerabot
-   ```
+### Development
 
-2. Run with systemd (recommended for production):
-   ```
-   [Unit]
-   Description=ZeraBot Telegram Bot
-   After=network.target
+```bash
+docker-compose -f docker-compose.dev.yml up --build
+```
 
-   [Service]
-   Type=simple
-   User=yourusername
-   WorkingDirectory=/path/to/zerabot
-   EnvironmentFile=/path/to/zerabot/.env
-   ExecStart=/path/to/zerabot/zerabot
-   Restart=always
+### Production
 
-   [Install]
-   WantedBy=multi-user.target
-   ```
+```bash
+# Build and start services
+docker-compose up -d --build
 
-## Security Notes
+# View logs
+docker-compose logs -f
 
-- Keep your `.env` file secure and never commit it to version control
-- Use a strong, random string for `WEBHOOK_SECRET`
-- Run the bot as a non-root user in production
-- Keep your server and dependencies updated
+# Stop services
+docker-compose down
+```
 
-## Contributing
+## 📊 Database
 
-Feel free to submit issues and enhancement requests.
+ZeraBot uses PostgreSQL for storing subscriptions. The database schema is automatically managed through migrations.
 
-## License
+### Backup
 
-This project is open source and available under the [MIT License](LICENSE).
+```bash
+docker-compose exec db pg_dump -U postgres zerabot > backup_$(date +%Y-%m-%d).sql
+```
+
+### Restore
+
+```bash
+cat backup_file.sql | docker-compose exec -T db psql -U postgres zerabot
+```
+
+## 🔒 Security
+
+- All sensitive data is stored in environment variables
+- HTTPS is enforced for all webhook communications
+- Group admin verification for sensitive commands
+- Regular security updates for all dependencies
+
+## 📚 Documentation
+
+For detailed deployment and configuration instructions, see the [DEPLOYMENT.md](DEPLOYMENT.md) file.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Zera Network](https://zera.vision) for the amazing platform
+- All the open-source projects that made this possible
