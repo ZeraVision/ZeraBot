@@ -1,59 +1,133 @@
 # ZeraBot 🤖
 
-A Telegram bot built with Go that tracks Zera Network governance proposals and notifies subscribers about new proposals and updates. Built with scalability and security in mind.
+ZeraBot is a high-performance Telegram bot that monitors Zera Network governance proposals and delivers real-time updates to subscribers. Built with Go and designed for reliability, it supports thousands of concurrent users while maintaining minimal resource usage.
 
-## ✨ Features
+## ✨ Core Features
 
-- **Real-time Notifications**: Get instant updates about new governance proposals
-- **Symbol-based Subscriptions**: Subscribe to specific proposal symbols (e.g., `$ZRA+0000`)
-- **Admin Controls**: Group admins can manage subscriptions for their groups
-- **Docker Support**: Easy deployment with Docker and Docker Compose
-- **Secure**: Built with security best practices in mind
+- **Real-time Proposal Tracking**: Monitor new governance proposals as they're created
+- **Symbol-based Subscriptions**: Users can subscribe to specific proposals using symbols (e.g., `$ZRA+0000`)
+- **Group Management**: Admins can manage subscriptions for their communities
 
-## 🚀 Quick Start with Docker
+## 🚀 End-to-End Deployment
 
-The easiest way to run ZeraBot is using Docker Compose:
+### Prerequisites
+- Linux server (Ubuntu 22.04 recommended)
+- Docker and Docker Compose
+- Domain name pointing to your server
+- Ports 22, 80, 443, and 8080 open
+
+### 1. Server Setup (First-Time Only)
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/yourusername/ZeraBot.git
-cd ZeraBot
+# Update system and install requirements
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y git curl jq ufw
 
-# 2. Configure environment variables
-cp .env.example .env
-nano .env  # Update with your configuration
+# Configure firewall
+sudo ufw allow OpenSSH
+sudo ufw allow http
+sudo ufw allow https
+sudo ufw allow 8080/tcp
+sudo ufw --force enable
 
-# 3. Start the services
-docker-compose up -d
+# Install Docker
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+
+# Install Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
 ```
 
-## 📋 Prerequisites
+### 2. Deploy ZeraBot
 
-- Docker and Docker Compose
-- A Telegram bot token from [@BotFather](https://t.me/botfather)
-- A domain name pointing to your server (for webhooks)
-- Ports 80, 443, and 8080 open on your server
+```bash
+# Clone the repository
+sudo git clone https://github.com/jfederk/ZeraBot.git /opt/zerabot
+cd /opt/zerabot
 
-## 🔧 Configuration
+# Create and configure .env file
+cp .env.example .env
+nano .env  # Edit with your details
 
-Edit the `.env` file with your configuration:
+# Make deployment script executable
+chmod +x deploy.sh
+
+# Run the deployment
+./deploy.sh
+```
+
+### 3. Required .env Configuration
 
 ```env
-# Application
-ENVIRONMENT=production
-DOMAIN=yourdomain.com
+# Telegram Bot Token from @BotFather
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 
-# Telegram
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+# Your domain (e.g., bot.yourdomain.com)
+DOMAIN=your_domain_here
 
-# Security
-WEBHOOK_SECRET=a_secure_random_string
+# A secret key for your webhook endpoint (use a long, random string)
+WEBHOOK_SECRET=your_webhook_secret_here
 
-# Database
-DATABASE_URL=postgresql://user:password@host:port/dbname?sslmode=require
-
-# Let's Encrypt (optional)
+# Email for Let's Encrypt (optional but recommended)
 LETSENCRYPT_EMAIL=your_email@example.com
+
+# Set to "development" for local development, "production" for live
+ENVIRONMENT=production
+#NGROK_URL=https://your-ngrok-url.ngrok.io  # Replace with your actual ngrok URL (if using for localdev)
+
+# Database connection string (PostgreSQL) #! VPC Network preferred
+DATABASE_URL=postgres://username:password@localhost:5432/zerabot?sslmode=disable
+
+# Expected gossip address (zera network address (expects domain, ie routin.zera.vision - but can be modified to accept ipv4))
+GRPC_ADDRESS=domain.example.com
+
+```
+
+### 4. Verify Installation
+
+```bash
+# Check running services
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+
+# Check health status
+curl -s http://localhost:8080/health | jq
+```
+
+## 🔄 Updating ZeraBot
+
+```bash
+# Navigate to installation directory
+cd /opt/zerabot
+
+# Pull latest changes
+sudo git pull
+
+# Run deployment
+./deploy.sh
+```
+
+The deployment script will automatically:
+- Pull the latest code changes
+- Rebuild containers if needed
+- Apply database migrations
+- Restart services with zero downtime
+- Verify the new version is healthy
+- Rollback if anything fails
+
+## 🛠️ Maintenance
+
+### Common Commands
+
+```bash
+# View logs
+docker-compose logs -f
+
+# Restart services
+docker-compose restart
 ```
 
 ## 🤖 Bot Commands
@@ -89,30 +163,13 @@ docker-compose down
 
 ## 📊 Database
 
-ZeraBot uses PostgreSQL for storing subscriptions. The database schema is automatically managed through migrations.
-
-### Backup
-
-```bash
-docker-compose exec db pg_dump -U postgres zerabot > backup_$(date +%Y-%m-%d).sql
-```
-
-### Restore
-
-```bash
-cat backup_file.sql | docker-compose exec -T db psql -U postgres zerabot
-```
+ZeraBot uses PostgreSQL for storing subscriptions. The database schema is managed through migrations.
 
 ## 🔒 Security
 
 - All sensitive data is stored in environment variables
 - HTTPS is enforced for all webhook communications
 - Group admin verification for sensitive commands
-- Regular security updates for all dependencies
-
-## 📚 Documentation
-
-For detailed deployment and configuration instructions, see the [DEPLOYMENT.md](DEPLOYMENT.md) file.
 
 ## 🤝 Contributing
 
@@ -123,12 +180,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Zera Network](https://zera.vision) for the amazing platform
-- All the open-source projects that made this possible
