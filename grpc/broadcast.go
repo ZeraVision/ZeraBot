@@ -36,6 +36,8 @@ func Broadcast(ctx context.Context, block *zera_protobuf.Block) (*emptypb.Empty,
 		return &emptypb.Empty{}, nil
 	}
 
+	log.Printf("Block %d received", block.BlockHeader.BlockHeight)
+
 	go func(block *zera_protobuf.Block) {
 		proposal.ProcessProposals(block)
 	}(block)

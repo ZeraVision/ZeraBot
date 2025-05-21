@@ -10,6 +10,9 @@ services:
       - ENVIRONMENT=production
       - TZ=UTC
       - AUTOCERT_DIR=/app/certs  # Directory for Let's Encrypt certificates
+      - LOG_LEVEL=info  # Set to 'debug' for more verbose logs if needed
+      - GODEBUG=netdns=0  # Disable DNS resolver logs
+      - GIN_MODE=release  # Disable Gin debug mode logs
     ports:
       - "80:80"       # HTTP for Let's Encrypt challenge
       - "443:443"     # HTTPS
@@ -27,6 +30,13 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "{{.Name}}/{{.ID}}"
+        labels: "production"
 
   # Uncomment and configure if you need a local PostgreSQL instance
   # db:

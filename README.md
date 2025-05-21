@@ -105,7 +105,7 @@ curl -s http://localhost:8080/health | jq
 cd /opt/zerabot
 
 # Pull latest changes
-sudo git pull
+sudo git pull (force as needed: git fetch origin && git reset --hard origin/main && chmod +x deploy.sh)
 
 # Run deployment
 ./deploy.sh
