@@ -36,8 +36,6 @@ func Broadcast(ctx context.Context, block *zera_protobuf.Block) (*emptypb.Empty,
 		return &emptypb.Empty{}, nil
 	}
 
-	log.Printf("Block %d received", block.BlockHeader.BlockHeight)
-
 	go func(block *zera_protobuf.Block) {
 		proposal.ProcessProposals(block)
 	}(block)
@@ -49,7 +47,7 @@ func Broadcast(ctx context.Context, block *zera_protobuf.Block) (*emptypb.Empty,
 // isSenderFromDomain checks if the sender's IP matches a trusted source
 func isSenderFromDomain(ctx context.Context) bool {
 
-	if os.Getenv("ENVIRONMENT") == "development" {
+	if false && os.Getenv("ENVIRONMENT") == "development" {
 		return true
 	}
 
@@ -61,13 +59,14 @@ func isSenderFromDomain(ctx context.Context) bool {
 
 	// Get the sender's IP address
 	senderIP, _, err := net.SplitHostPort(p.Addr.String())
+	log.Printf("Block Sender IP: %s", senderIP) // log
 	if err != nil {
 		log.Printf("Failed to parse sender IP: %v", err)
 		return false
 	}
 
 	// Compare the sender's IP against a trusted domain
-	expectedDomain := os.Getenv("GRPC_ADDR")
+	expectedDomain := os.Getenv("GRPC_ADDRESS")
 	ips, err := net.LookupIP(expectedDomain)
 	if err != nil {
 		log.Printf("Failed to resolve domain %s: %v", expectedDomain, err)

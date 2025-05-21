@@ -28,7 +28,6 @@ var (
 
 func init() {
 	godotenv.Load(".env")
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
 func main() {
