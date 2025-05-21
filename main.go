@@ -42,7 +42,7 @@ func main() {
 
 	// Set up server
 	webhookPath := "/" + os.Getenv("WEBHOOK_SECRET")
-	srv, err = server.New(bot.API, cfg.Domain, webhookPath, cfg.Env == "production")
+	srv, err = server.New(bot, cfg.Domain, webhookPath, cfg.Env == "production")
 	if err != nil {
 		log.Fatalf("Failed to create server: %v", err)
 	}

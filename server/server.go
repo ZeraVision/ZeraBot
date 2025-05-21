@@ -8,18 +8,18 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/jfederk/ZeraBot/telegram"
 	"golang.org/x/crypto/acme/autocert"
 )
 
 type Server struct {
 	httpServer *http.Server
-	bot        *tgbotapi.BotAPI
+	bot        *telegram.Bot
 	webhookURL string
 }
 
 // New creates a new server instance
-func New(bot *tgbotapi.BotAPI, domain, webhookPath string, isProduction bool) (*Server, error) {
+func New(bot *telegram.Bot, domain, webhookPath string, isProduction bool) (*Server, error) {
 	s := &Server{
 		bot: bot,
 	}
@@ -34,7 +34,7 @@ func New(bot *tgbotapi.BotAPI, domain, webhookPath string, isProduction bool) (*
 	if isProduction {
 		s.webhookURL = fmt.Sprintf("https://%s%s", domain, webhookPath)
 		server.Addr = ":443"
-		
+
 		// Set up Let's Encrypt cert manager
 		certManager := autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
@@ -86,14 +86,5 @@ func (s *Server) WebhookURL() string {
 }
 
 func (s *Server) webhookHandler(w http.ResponseWriter, r *http.Request) {
-	update, err := s.bot.HandleUpdate(r)
-	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		log.Printf("Error handling webhook update: %v", err)
-		return
-	}
-
-	if update.Message != nil {
-		log.Printf("Received message from %d", update.Message.Chat.ID)
-	}
+	s.bot.WebhookHandler(w, r)
 }
