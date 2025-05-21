@@ -1,46 +1,51 @@
-# Build stage
+# Build stage: Use official Go 1.23.2 Alpine image
 FROM golang:1.23.2-alpine AS builder
 
+# Install Git for fetching Go module dependencies
+RUN apk add --no-cache git
+
+# Set working directory
 WORKDIR /app
 
-# Install build dependencies
-RUN apk add --no-cache git gcc musl-dev
-
-# Download dependencies
+# Copy go.mod and go.sum and download dependencies
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy source code
+# Copy the rest of the source code
 COPY . .
 
-# Build the application with optimizations
+# Build the binary with optimizations
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-w -s -extldflags '-static'" \
     -o /app/bin/zerabot
 
-# Final stage
-FROM alpine:3.18
+# Final stage: Minimal image
+FROM alpine:3.19
 
+# Install CA certificates and timezone data
+RUN apk add --no-cache ca-certificates tzdata
+
+# Create non-root user
+RUN addgroup -S zerabot && adduser -S zerabot -G zerabot -h /app
+
+# Set working directory
 WORKDIR /app
-
-# Install runtime dependencies and create non-root user in a single layer
-RUN apk add --no-cache ca-certificates tzdata && \
-    addgroup -S zerabot && \
-    adduser -S -G zerabot zerabot && \
-    chown -R zerabot:zerabot /app
 
 # Copy the binary from builder
 COPY --from=builder /app/bin/zerabot /app/zerabot
 
-# Switch to non-root user
+# Set ownership and execution permissions
+RUN chown -R zerabot:zerabot /app && chmod +x /app/zerabot
+
+# Use non-root user
 USER zerabot
 
-# Expose the port the app runs on
-EXPOSE 8080 443
+# Expose application ports
+EXPOSE 8080 443 50051
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
-# Command to run the executable
+# Run the app
 ENTRYPOINT ["/app/zerabot"]

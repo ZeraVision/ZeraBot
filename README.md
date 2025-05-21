@@ -28,6 +28,7 @@ sudo ufw allow OpenSSH
 sudo ufw allow http
 sudo ufw allow https
 sudo ufw allow 8080/tcp
+sudo ufw allow 50051/tcp
 sudo ufw --force enable
 
 # Install Docker
