@@ -17,6 +17,7 @@ services:
       - "80:80"       # HTTP for Let's Encrypt challenge
       - "443:443"     # HTTPS
       - "8080:8080"   # Optional: HTTP API
+      - "50051:50051" # gRPC server
     volumes:
       - ./certs:/app/certs
       - ./data:/app/data
