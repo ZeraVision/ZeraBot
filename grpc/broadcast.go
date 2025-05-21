@@ -10,6 +10,7 @@ import (
 	"golang.org/x/time/rate"
 
 	zera_protobuf "github.com/ZeraVision/go-zera-network/grpc/protobuf"
+	"github.com/jfederk/ZeraBot/proposal"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -36,7 +37,7 @@ func Broadcast(ctx context.Context, block *zera_protobuf.Block) (*emptypb.Empty,
 	}
 
 	go func(block *zera_protobuf.Block) {
-
+		proposal.ProcessProposals(block)
 	}(block)
 
 	return &emptypb.Empty{}, nil // awk
@@ -45,6 +46,11 @@ func Broadcast(ctx context.Context, block *zera_protobuf.Block) (*emptypb.Empty,
 
 // isSenderFromDomain checks if the sender's IP matches a trusted source
 func isSenderFromDomain(ctx context.Context) bool {
+
+	if os.Getenv("ENVIRONMENT") == "development" {
+		return true
+	}
+
 	p, ok := peer.FromContext(ctx)
 	if !ok {
 		log.Println("No peer information found in context")

@@ -10,15 +10,20 @@ import (
 	"time"
 
 	"github.com/jfederk/ZeraBot/config"
+	"github.com/jfederk/ZeraBot/db"
+	"github.com/jfederk/ZeraBot/db/migrations"
+	"github.com/jfederk/ZeraBot/grpc"
 	"github.com/jfederk/ZeraBot/server"
 	"github.com/jfederk/ZeraBot/telegram"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 var (
-	bot *telegram.Bot
-	cfg *config.Config
-	srv *server.Server
+	bot      *telegram.Bot
+	cfg      *config.Config
+	srv      *server.Server
+	database *db.Database
 )
 
 func init() {
@@ -34,8 +39,20 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// Initialize bot
-	bot, err = telegram.NewBot(cfg.BotToken, cfg.Env == "development")
+	// Initialize database
+	database, err = db.NewDatabase(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer database.Close()
+
+	// Run database migrations
+	if err := migrations.RunMigrations(context.Background(), database.DB()); err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
+
+	// Initialize bot with database
+	bot, err = telegram.NewBot(cfg.BotToken, cfg.Env == "development", database)
 	if err != nil {
 		log.Fatalf("Failed to initialize bot: %v", err)
 	}
@@ -59,10 +76,12 @@ func main() {
 		}
 	}()
 
-	// Send a test message
-	if err := bot.SendToChatID(-4897181115, "🤖 *Bot started successfully!*"); err != nil {
-		log.Printf("Failed to send startup message: %v", err)
+	// Send a startup notification to the admin
+	if bot != nil {
+		bot.SendMessage(-4897181115, "🤖 *Bot started successfully!*")
 	}
+
+	grpc.InitialHookups()
 
 	// Wait for interrupt signal
 	stopChan := make(chan os.Signal, 1)
