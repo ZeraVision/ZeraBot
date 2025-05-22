@@ -122,25 +122,25 @@ docker_compose() {
 # Ensure certs directory exists with correct permissions
 echo -e "${YELLOW}🔐 Setting up certificates directory...${NC}"
 mkdir -p certs
-chmod 700 certs
+
+# Set full permissions for the certs directory
+if [ "$IS_WINDOWS" = false ]; then
+    echo -e "${YELLOW}🔑 Setting up permissions...${NC}"
+    # Ensure the directory exists and has the right permissions
+    run_as_root mkdir -p certs
+    run_as_root chown -R 0:0 certs/  # Owned by root
+    run_as_root chmod -R 777 certs/   # Full permissions for certs
+    
+    # Create a test file to verify permissions
+    if ! touch certs/test_permissions 2>/dev/null; then
+        echo -e "${YELLOW}⚠️  Could not write to certs directory, trying sudo...${NC}"
+        run_as_root chmod -R 777 certs/
+    fi
+    rm -f certs/test_permissions 2>/dev/null || true
+fi
 
 # Build the new service first to minimize downtime
 echo -e "${YELLOW}🔨 Building new services...${NC}"
-
-# Ensure the certs volume is created before building
-echo -e "${YELLOW}🔧 Setting up volumes...${NC}"
-docker volume ls | grep -q "${PWD##*/}_certs" || docker volume create --driver local \
-    --opt type=none \
-    --opt o=bind \
-    --opt device=${PWD}/certs \
-    ${PWD##*/}_certs
-
-# Set proper permissions for the certs directory
-if [ "$IS_WINDOWS" = false ]; then
-    echo -e "${YELLOW}🔑 Setting up permissions...${NC}"
-    run_as_root chown -R 1000:1000 certs/
-    run_as_root chmod -R 700 certs/
-fi
 if ! docker_compose build --no-cache; then
     echo -e "${RED}❌ Failed to build services${NC}"
     exit 1
@@ -180,3 +180,40 @@ if ! docker_compose up -d; then
     exit 1
 fi
 
+# Restart the services with the new image
+echo -e "${YELLOW}🔄 Restarting services...${NC}"
+if docker_compose up -d; then
+    echo -e "${GREEN}✅ Services restarted successfully${NC}"
+    
+    # Clean up all non-active resources
+    echo -e "${YELLOW}🧹 Cleaning up all non-active Docker resources...${NC}"
+    
+    # Stop and remove all containers except the current ones
+    echo -e "${YELLOW}🧹 Pruning all stopped containers...${NC}"
+    docker container prune -f
+    
+    # Remove all unused images (not just dangling ones)
+    echo -e "${YELLOW}🧹 Pruning unused images...${NC}"
+    docker image prune -af
+    
+    # Clean up build cache
+    echo -e "${YELLOW}🧹 Cleaning build cache...${NC}"
+    docker builder prune -af
+    
+    # Clean up networks
+    echo -e "${YELLOW}🧹 Cleaning up unused networks...${NC}"
+    docker network prune -f
+    
+    # Clean up volumes, but exclude the certs volume
+    echo -e "${YELLOW}🧹 Cleaning up unused volumes (excluding certs)...${NC}"
+    docker volume prune -f --filter "label!=com.docker.compose.project=${PWD##*/}_certs"
+    
+    # Final system-wide cleanup
+    echo -e "${YELLOW}🧹 Performing final system cleanup...${NC}"
+    docker system prune -af --volumes --filter "label!=com.docker.compose.project=${PWD##*/}_certs"
+    
+    echo -e "${GREEN}✅ Cleanup completed${NC}"
+else
+    echo -e "${RED}❌ Failed to restart services${NC}"
+    exit 1
+fi

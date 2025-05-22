@@ -18,13 +18,16 @@ services:
       - "443:443"     # HTTPS
       - "50051:50051" # gRPC server
     volumes:
-      - certs:/app/certs
+      - ./certs:/app/certs:rw  # Explicit read-write access
       - data:/app/data
-      # Use named volumes for better persistence and portability
+      # Using bind mount for certs with proper permissions
+    # Ensure the container has root access to manage certs
+    user: root
     networks:
       - zerabot-network
     # Ensure proper permissions for the certs directory
-    user: "1000:1000"  # Match the non-root user in the container
+    # Run as root to ensure certificate access
+    # user: "1000:1000"  # Temporarily disabled for certificate access
     logging:
       driver: "json-file"
       options:
@@ -59,10 +62,3 @@ networks:
 volumes:
   postgres_data:
   data:
-  certs:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      # This ensures the certs directory exists and has the right permissions
-      device: ${PWD}/certs
