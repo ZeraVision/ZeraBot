@@ -63,7 +63,7 @@ func main() {
 		log.Fatalf("Failed to create server: %v", err)
 	}
 
-	// Set up webhook
+	// Set up webhook // TODO this service seems to die after a short time (not get new webhooks at entry)
 	if err := bot.SetupWebhook(srv.WebhookURL()); err != nil {
 		log.Fatalf("Failed to set up webhook: %v", err)
 	}
@@ -75,14 +75,14 @@ func main() {
 		}
 	}()
 
+	go func() {
+		grpc.InitialHookups()
+	}()
+
 	// Send a startup notification to the test channel
 	if bot != nil {
 		bot.SendMessage(-4897181115, "🤖 *Bot started successfully!*")
 	}
-
-	go func() {
-		grpc.InitialHookups()
-	}()
 
 	// Wait for interrupt signal
 	stopChan := make(chan os.Signal, 1)
