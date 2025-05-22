@@ -119,8 +119,15 @@ docker_compose() {
     fi
 }
 
-# Stop and remove existing containers if they exist
-echo -e "${YELLOW}🛑 Stopping any running services...${NC}"
+# Build the new service first to minimize downtime
+echo -e "${YELLOW}🔨 Building new services...${NC}"
+if ! docker_compose build --no-cache; then
+    echo -e "${RED}❌ Failed to build services${NC}"
+    exit 1
+fi
+
+# Only stop old services after new ones are built
+echo -e "${YELLOW}🛑 Stopping old services...${NC}"
 docker_compose down --remove-orphans || true
 
 # Set up certs directory with proper permissions
@@ -146,13 +153,8 @@ else
     run_as_root chown -R 1000:1000 "$CERT_DIR"
 fi
 
-# Rebuild and start services
-echo -e "${YELLOW}🚀 Building and starting services...${NC}"
-if ! docker_compose build --no-cache; then
-    echo -e "${RED}❌ Failed to build services${NC}"
-    exit 1
-fi
-
+# Start the new services
+echo -e "${YELLOW}🚀 Starting services...${NC}"
 if ! docker_compose up -d; then
     echo -e "${RED}❌ Failed to start services${NC}"
     exit 1

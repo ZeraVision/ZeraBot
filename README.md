@@ -114,7 +114,7 @@ sudo git pull (force as needed: git fetch origin && git reset --hard origin/main
 The deployment script will automatically:
 - Pull the latest code changes
 - Rebuild containers if needed
-- Restart services with zero downtime
+- Restart services
 
 ## 🛠️ Maintenance
 
