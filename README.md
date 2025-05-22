@@ -93,9 +93,6 @@ docker-compose ps
 
 # View logs
 docker-compose logs -f
-
-# Check health status
-curl -s http://localhost:8080/health | jq
 ```
 
 ## 🔄 Updating ZeraBot
