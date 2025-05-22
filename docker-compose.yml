@@ -18,9 +18,9 @@ services:
       - "443:443"     # HTTPS
       - "50051:50051" # gRPC server
     volumes:
-      - ./certs:/app/certs
-      - ./data:/app/data
-      # Use a bind mount for certs to ensure proper permissions
+      - certs:/app/certs
+      - data:/app/data
+      # Use named volumes for better persistence and portability
     networks:
       - zerabot-network
     # Ensure proper permissions for the certs directory
@@ -59,3 +59,10 @@ networks:
 volumes:
   postgres_data:
   data:
+  certs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      # This ensures the certs directory exists and has the right permissions
+      device: ${PWD}/certs

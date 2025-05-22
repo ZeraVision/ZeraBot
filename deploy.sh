@@ -119,8 +119,28 @@ docker_compose() {
     fi
 }
 
+# Ensure certs directory exists with correct permissions
+echo -e "${YELLOW}🔐 Setting up certificates directory...${NC}"
+mkdir -p certs
+chmod 700 certs
+
 # Build the new service first to minimize downtime
 echo -e "${YELLOW}🔨 Building new services...${NC}"
+
+# Ensure the certs volume is created before building
+echo -e "${YELLOW}🔧 Setting up volumes...${NC}"
+docker volume ls | grep -q "${PWD##*/}_certs" || docker volume create --driver local \
+    --opt type=none \
+    --opt o=bind \
+    --opt device=${PWD}/certs \
+    ${PWD##*/}_certs
+
+# Set proper permissions for the certs directory
+if [ "$IS_WINDOWS" = false ]; then
+    echo -e "${YELLOW}🔑 Setting up permissions...${NC}"
+    run_as_root chown -R 1000:1000 certs/
+    run_as_root chmod -R 700 certs/
+fi
 if ! docker_compose build --no-cache; then
     echo -e "${RED}❌ Failed to build services${NC}"
     exit 1
