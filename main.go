@@ -80,7 +80,9 @@ func main() {
 		bot.SendMessage(-4897181115, "🤖 *Bot started successfully!*")
 	}
 
-	grpc.InitialHookups()
+	go func() {
+		grpc.InitialHookups()
+	}()
 
 	// Wait for interrupt signal
 	stopChan := make(chan os.Signal, 1)
