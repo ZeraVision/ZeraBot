@@ -26,8 +26,6 @@ var limiter = rate.NewLimiter(rate.Every(3*time.Second), 1) // 1 request per 3 s
 
 func Broadcast(ctx context.Context, block *zera_protobuf.Block) (*emptypb.Empty, error) {
 
-	log.Printf("Broadcast received for block %d", block.BlockHeader.BlockHeight)
-
 	// Rate limit the broadcasts
 	if !limiter.Allow() {
 		log.Println("Broadcast rate limit exceeded (1 per 3 seconds), rejecting broadcast")
@@ -51,7 +49,7 @@ func Broadcast(ctx context.Context, block *zera_protobuf.Block) (*emptypb.Empty,
 // isSenderFromDomain checks if the sender's IP matches a trusted source
 func isSenderFromDomain(ctx context.Context) bool {
 
-	if false && os.Getenv("ENVIRONMENT") == "development" {
+	if os.Getenv("ENVIRONMENT") == "development" {
 		return true
 	}
 
@@ -63,7 +61,6 @@ func isSenderFromDomain(ctx context.Context) bool {
 
 	// Get the sender's IP address
 	senderIP, _, err := net.SplitHostPort(p.Addr.String())
-	log.Printf("Block Sender IP: %s", senderIP) // log
 	if err != nil {
 		log.Printf("Failed to parse sender IP: %v", err)
 		return false
@@ -83,6 +80,6 @@ func isSenderFromDomain(ctx context.Context) bool {
 		}
 	}
 
-	log.Println("Sender IP does not match the domain" + expectedDomain + "(" + senderIP + ")")
+	log.Println("Sender IP does not match the expected domain: " + expectedDomain + "(got " + senderIP + ")")
 	return false
 }
