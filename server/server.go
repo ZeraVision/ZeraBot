@@ -2,14 +2,12 @@ package server
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/jfederk/ZeraBot/telegram"
-	"golang.org/x/crypto/acme/autocert"
 )
 
 type Server struct {
@@ -31,25 +29,11 @@ func New(bot *telegram.Bot, domain, webhookPath string, isProduction bool) (*Ser
 		Handler: mux,
 	}
 
+	server.Addr = ":8080"
 	if isProduction {
 		s.webhookURL = fmt.Sprintf("https://%s%s", domain, webhookPath)
-		server.Addr = ":443"
-
-		// Set up Let's Encrypt cert manager
-		certManager := autocert.Manager{
-			Prompt:     autocert.AcceptTOS,
-			HostPolicy: autocert.HostWhitelist(domain),
-			Cache:      autocert.DirCache("certs"),
-		}
-
-		server.TLSConfig = &tls.Config{
-			GetCertificate: certManager.GetCertificate,
-		}
-
-		// Start HTTP server for Let's Encrypt HTTP-01 challenge
-		go http.ListenAndServe(":80", certManager.HTTPHandler(nil))
+		log.Printf("Running in production mode on %s", server.Addr)
 	} else {
-		server.Addr = ":8080"
 		if ngrokURL := os.Getenv("NGROK_URL"); ngrokURL != "" {
 			s.webhookURL = fmt.Sprintf("%s%s", ngrokURL, webhookPath)
 		}

@@ -1,0 +1,3 @@
+tgzerabot.jessefed.com {
+  reverse_proxy zerabot:80
+}
