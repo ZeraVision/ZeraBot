@@ -14,8 +14,9 @@ services:
       - GODEBUG=netdns=0
       - GIN_MODE=release
     expose:
-      - "50051"
       - "8080"
+    ports:
+      - "50051:50051"
     volumes:
       - ./certs:/app/certs:rw
       - data:/app/data
