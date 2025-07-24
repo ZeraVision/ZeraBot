@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/ZeraVision/ZeraBot/telegram"
+	"github.com/ZeraVision/ZeraBot/txnstatus"
+	"github.com/ZeraVision/ZeraBot/util"
 	zera_protobuf "github.com/ZeraVision/go-zera-network/grpc/protobuf"
 	"github.com/ZeraVision/zera-go-sdk/transcode"
-	"github.com/jfederk/ZeraBot/telegram"
-	"github.com/jfederk/ZeraBot/txnstatus"
-	"github.com/jfederk/ZeraBot/util"
 )
 
 // ProcessProposals processes new governance proposals and notifies subscribers

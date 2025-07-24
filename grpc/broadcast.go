@@ -9,8 +9,8 @@ import (
 
 	"golang.org/x/time/rate"
 
+	"github.com/ZeraVision/ZeraBot/proposal"
 	zera_protobuf "github.com/ZeraVision/go-zera-network/grpc/protobuf"
-	"github.com/jfederk/ZeraBot/proposal"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/types/known/emptypb"
 )

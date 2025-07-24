@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/ZeraVision/ZeraBot/db"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/jfederk/ZeraBot/db"
 )
 
 // WebhookHandler handles incoming webhook requests
@@ -37,7 +37,7 @@ func (b *Bot) handleCommand(message *tgbotapi.Message) {
 	args := message.CommandArguments()
 
 	// Check if the command requires admin privileges
-	isRestrictedCommand := strings.ToLower(command) == "proposalsubscribe" || 
+	isRestrictedCommand := strings.ToLower(command) == "proposalsubscribe" ||
 		strings.ToLower(command) == "proposalunsubscribe"
 
 	if isRestrictedCommand {

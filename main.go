@@ -9,12 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jfederk/ZeraBot/config"
-	"github.com/jfederk/ZeraBot/db"
-	"github.com/jfederk/ZeraBot/db/migrations"
-	"github.com/jfederk/ZeraBot/grpc"
-	"github.com/jfederk/ZeraBot/server"
-	"github.com/jfederk/ZeraBot/telegram"
+	"github.com/ZeraVision/ZeraBot/config"
+	"github.com/ZeraVision/ZeraBot/db"
+	"github.com/ZeraVision/ZeraBot/db/migrations"
+	"github.com/ZeraVision/ZeraBot/grpc"
+	"github.com/ZeraVision/ZeraBot/server"
+	"github.com/ZeraVision/ZeraBot/telegram"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )

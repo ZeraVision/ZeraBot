@@ -45,7 +45,7 @@ sudo chmod +x /usr/local/bin/docker-compose
 
 ```bash
 # Clone the repository
-sudo git clone https://github.com/jfederk/ZeraBot.git /opt/zerabot
+sudo git clone https://github.com/ZeraVision/ZeraBot.git /opt/zerabot
 cd /opt/zerabot
 
 # Create and configure .env file

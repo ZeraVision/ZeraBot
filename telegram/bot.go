@@ -7,8 +7,8 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/ZeraVision/ZeraBot/db"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/jfederk/ZeraBot/db"
 )
 
 var bot *Bot

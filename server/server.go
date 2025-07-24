@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/jfederk/ZeraBot/telegram"
+	"github.com/ZeraVision/ZeraBot/telegram"
 )
 
 type Server struct {
