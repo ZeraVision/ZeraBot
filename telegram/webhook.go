@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/ZeraVision/ZeraBot/db"
@@ -105,7 +106,12 @@ func (b *Bot) SendMessage(chatID int64, text string) {
 	msg := tgbotapi.NewMessage(chatID, text)
 	msg.ParseMode = "Markdown"
 	if _, err := b.API.Send(msg); err != nil {
-		log.Printf("Error sending message: %v", err)
+		log.Printf("Markdown parsing failed for chat %d, retrying without parsing: %v", chatID, err)
+		// If Markdown parsing fails, try without parsing
+		msg.ParseMode = ""
+		if _, err := b.API.Send(msg); err != nil {
+			log.Printf("Error sending message: %v", err)
+		}
 	}
 }
 
@@ -116,7 +122,20 @@ func (b *Bot) NotifySubscribers(symbol string, message string) error {
 		return fmt.Errorf("failed to get subscribers: %w", err)
 	}
 
+	// Only keep ZERABot test chat if in dev mode
+	if os.Getenv("DEV") == "TRUE" {
+		// Filter subscribers to only keep -4897181115 if it exists
+		var filteredSubscribers []int64
+		for _, subID := range subscribers {
+			if subID == -4897181115 {
+				filteredSubscribers = append(filteredSubscribers, subID)
+			}
+		}
+		subscribers = filteredSubscribers
+	}
+
 	for _, chatID := range subscribers {
+
 		if err := SendToChatID(chatID, message); err != nil {
 			log.Printf("Failed to send notification to chat %d: %v", chatID, err)
 		}

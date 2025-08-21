@@ -8,6 +8,7 @@ import (
 	"unicode"
 
 	"github.com/ZeraVision/ZeraBot/db"
+	"github.com/ZeraVision/ZeraBot/util"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -80,10 +81,18 @@ func SendToChatID(chatID int64, message string) error {
 		return fmt.Errorf("bot not initialized")
 	}
 
+	// First try with Markdown parsing
 	msg := tgbotapi.NewMessage(chatID, message)
 	msg.ParseMode = "Markdown"
 
 	_, err := bot.API.Send(msg)
+	if err != nil {
+		// If Markdown parsing fails, try without parsing
+		log.Printf("Markdown parsing failed for chat %d, retrying without parsing: %v", chatID, err)
+		msg.ParseMode = ""
+		_, err = bot.API.Send(msg)
+	}
+
 	return err
 }
 
@@ -225,14 +234,14 @@ func (b *Bot) handleSubscribe(chatID int64, args string) error {
 	for _, symbol := range symbols {
 		_, err := b.subRepo.Subscribe(context.Background(), chatID, db.ProposalType, symbol)
 		if err != nil {
-			resultMsgs = append(resultMsgs, fmt.Sprintf("❌ Failed to subscribe to %s: %v", symbol, err))
+			resultMsgs = append(resultMsgs, fmt.Sprintf("❌ Failed to subscribe to %s: %v", util.EscapeMarkdown(symbol), err))
 		} else {
 			successCount++
 		}
 	}
 
 	if successCount > 0 {
-		msg := fmt.Sprintf("✅ Successfully subscribed to %s", symbols[0])
+		msg := fmt.Sprintf("✅ Successfully subscribed to %s", util.EscapeMarkdown(symbols[0]))
 		if successCount > 1 {
 			msg = fmt.Sprintf("✅ Successfully subscribed to %d symbols", successCount)
 		}
@@ -282,14 +291,14 @@ func (b *Bot) handleUnsubscribe(chatID int64, args string) error {
 	for _, symbol := range symbols {
 		err := b.subRepo.Unsubscribe(context.Background(), chatID, db.ProposalType, symbol)
 		if err != nil {
-			resultMsgs = append(resultMsgs, fmt.Sprintf("❌ Failed to unsubscribe from %s: %v", symbol, err))
+			resultMsgs = append(resultMsgs, fmt.Sprintf("❌ Failed to unsubscribe from %s: %v", util.EscapeMarkdown(symbol), err))
 		} else {
 			successCount++
 		}
 	}
 
 	if successCount > 0 {
-		msg := fmt.Sprintf("✅ Successfully unsubscribed from %s", symbols[0])
+		msg := fmt.Sprintf("✅ Successfully unsubscribed from %s", util.EscapeMarkdown(symbols[0]))
 		if successCount > 1 {
 			msg = fmt.Sprintf("✅ Successfully unsubscribed from %d symbols", successCount)
 		}
@@ -316,7 +325,7 @@ func (b *Bot) handleMySubscriptions(chatID int64) error {
 
 	var subList []string
 	for _, sub := range subs {
-		subList = append(subList, fmt.Sprintf("• %s (%s)", sub.Symbol, sub.Type))
+		subList = append(subList, fmt.Sprintf("• %s (%s)", util.EscapeMarkdown(sub.Symbol), util.EscapeMarkdown(string(sub.Type))))
 	}
 
 	message := fmt.Sprintf("📋 Your subscriptions (%d):\n%s",

@@ -62,8 +62,8 @@ func formatProposalMessage(proposal *zera_protobuf.GovernanceProposal) string {
 
 [View on Explorer](https://explorer.zera.vision/proposal/%s)`,
 		proposal.ContractId,
-		util.Truncate(proposal.Title, 50),
-		util.Truncate(proposal.Synopsis, 200),
+		util.EscapeMarkdown(util.Truncate(proposal.Title, 200)),
+		util.EscapeMarkdown(util.Truncate(proposal.Synopsis, 500)),
 		proposalID,
 		proposalID,
 	)
