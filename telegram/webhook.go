@@ -58,6 +58,10 @@ func (b *Bot) handleCommand(message *tgbotapi.Message) {
 	case "start":
 		b.sendHelpMessage(chatID)
 	case "help":
+		// Only respond to /help if it's addressed to this bot (private chat or /help@botname in groups)
+		if !b.isCommandAddressedToBot(message) {
+			return // Ignore the command if not addressed to this bot
+		}
 		b.sendHelpMessage(chatID)
 	case "proposalsubscribe":
 		if err := b.handleSubscribe(chatID, args); err != nil {
@@ -77,6 +81,32 @@ func (b *Bot) handleCommand(message *tgbotapi.Message) {
 	default:
 		b.SendMessage(chatID, "❌ Unknown command. Use /help to see available commands.")
 	}
+}
+
+// isCommandAddressedToBot checks if a command was explicitly addressed to this bot
+// Returns true for private chats or when command contains @botusername in groups
+func (b *Bot) isCommandAddressedToBot(message *tgbotapi.Message) bool {
+	chatID := message.Chat.ID
+	userID := message.From.ID
+
+	// Private chats are always addressed to the bot
+	if chatID == userID {
+		return true
+	}
+
+	// For groups, check if the message contains @botusername
+	botInfo, err := b.API.GetMe()
+	if err != nil {
+		log.Printf("Error getting bot info: %v", err)
+		// If we can't get bot info, allow the command (safer default)
+		return true
+	}
+
+	botUsername := botInfo.UserName
+	messageText := message.Text
+
+	// Check if the message contains @botusername
+	return strings.Contains(strings.ToLower(messageText), "@"+strings.ToLower(botUsername))
 }
 
 // sendHelpMessage sends the help message to the specified chat

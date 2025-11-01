@@ -53,10 +53,7 @@ cp .env.example .env
 nano .env  # Edit with your details
 
 # Make deployment script executable
-chmod +x deploy.sh
-
-# Run the deployment
-./deploy.sh
+cd /opt/zerabot && chmod +x deploy.sh && ./deploy.sh
 ```
 
 ### 3. Required .env Configuration
